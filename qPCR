@@ -1,0 +1,13 @@
+#code for qPCR
+
+https://github.com/savvasjconstantinou/qpcRanalysis
+
+analysis of ct differences-
+#code for anova for delta ct differences for qPCR
+dCt <- c(1.42496497, 0.85455584, 1.58148445, 3.46491474, 2.97499999, 3.77181974, 4.77462939, 5.15833434, 6.13886573)
+individual <- as.factor(c("control", "control", "control", "MOL", "MOL", "MOL", "MOH", "MOH", "MOH"))
+new <- data.frame(dCt, individual)
+
+testing <- aov(dCt ~ individual, data = new)
+summary(testing)
+TukeyHSD(testing)
