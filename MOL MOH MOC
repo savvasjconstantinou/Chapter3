@@ -1,0 +1,67 @@
+
+
+library(ggpubr)
+library(AICcmodavg)
+library(dplyr)
+
+
+#bring data in
+amp.data <- read.csv("C:/Users/Savvas Constantinou/Desktop/amp.data.csv", header = TRUE, colClasses = c("factor", "numeric", "factor", "numeric", "factor", "factor", "factor", "factor", "factor", "factor"))
+head(amp.data)
+
+MO <- subset(amp.data, ID == c("MOL", "MOH", "MOC2"))
+ggboxplot(MO, x = "Time", y = "PERBaseline", add = "point", color="ID")
+
+one.way <- aov(PERBaseline ~ Time, data= MO)
+two.way <- aov(PERBaseline ~ Time + ID, data= MO)
+interaction <- aov(PERBaseline ~ Time*ID, data= MO)
+
+summary(interaction)
+
+model.set <- list(one.way, two.way, interaction)
+model.names <- c("one.way", "two.way", "interaction")
+
+aictab(model.set, modnames = model.names)
+
+tukey <- TukeyHSD(interaction)
+tukey
+
+
+plot(tukey)
+
+
+tukey.plot.aov<-aov(PERBaseline ~ Time:ID, data=MO)
+tukey.plot.test<-TukeyHSD(tukey.plot.aov)
+plot(tukey.plot.test, las=1)
+
+
+mean.data <- MO %>%
+  group_by(ID, Time) %>%
+  summarise(
+    PERBaseline = mean(PERBaseline)
+  )
+
+two.way.plot <- ggplot(MO, aes(x = Time, y = PERBaseline, group=ID, color = ID)) +
+  geom_point(cex = 1.5, pch = 1.0,position = position_jitter(w = 0.1, h = 0))
+
+two.way.plot
+
+two.way.plot <- two.way.plot +
+  stat_summary(fun.data = 'mean_se', geom = 'errorbar', width = 0.5, color = "Black") +
+  stat_summary(fun.data = 'mean_se', geom = 'pointrange', color ="purple") +
+  geom_point(data=mean.data, aes(x=Time, y=PERBaseline)) 
+
+two.way.plot
+
+two.way.plot <- two.way.plot +
+  theme_classic2() +
+  labs(title = "Change in Amplitude Compared to Baseline in Response to Morpholino Treatment",
+       x = "Time",
+       y = "Percent of Baseline")
+
+two.way.plot
+
+#determine number of observations in each group
+label_df <- MO %>% count(ID, Time)
+
+
