@@ -1,0 +1,9 @@
+#chi square used to determine differences in behavor following MO injection and deaths
+
+toxic <- c(17, 4, 2, 4, 0, 0)
+ho <- chisq.test(toxic)
+ho$expected
+
+death <- c(4, 4, 1, 0, 0, 0)
+hi <- chisq.test(death)
+hi$expected
