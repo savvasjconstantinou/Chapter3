@@ -16,12 +16,12 @@ one.way <- aov(PERBaseline ~ Time, data= MO)
 two.way <- aov(PERBaseline ~ Time + ID, data= MO)
 interaction <- aov(PERBaseline ~ Time*ID, data= MO)
 
-summary(interaction)
-
 model.set <- list(one.way, two.way, interaction)
 model.names <- c("one.way", "two.way", "interaction")
 
 aictab(model.set, modnames = model.names)
+#interaction best fit
+summary(interaction)
 
 tukey <- TukeyHSD(interaction)
 tukey
