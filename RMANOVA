@@ -1,0 +1,150 @@
+#do repeated measures ANOVA
+library(ggpubr)
+library(dplyr)
+library(Hmisc)
+
+#code to bring in file and check
+threeday <- read.csv("C:/Users/Savvas Constantinou/Desktop/threeday.csv", header = TRUE, colClasses = c("factor", "numeric", "factor", "numeric", "factor", "factor", "factor", "factor", "factor", "factor", "factor", "factor"))
+head(threeday)
+#order bin chronologically 
+threeday$bin <- ordered(threeday$bin, levels = c("0.5", "1", "2", "4", "5", "6", "8", "9","10", "12"))
+
+#check where data lies in groups
+describe(threeday)
+addmargins(xtabs(~TREATGROUP + bin, data=threeday))
+
+#check the values and their variance
+aggregate(PERBaseline~bin+TREATGROUP, data = threeday, FUN = mean)
+aggregate(PERBaseline~bin+TREATGROUP, data = threeday, FUN = sd)
+
+#plot raw data in box plot (median)
+ggboxplot(threeday, x = "bin", y = "PERBaseline", color = "TREATGROUP")
+
+#spaghetti plots- are there interactions check how noisy data is
+
+xyplot(PERBaseline~bin,data = threeday, groups=ID ,type='l')
+xyplot(PERBaseline~bin,data = threeday, groups=TREATGROUP ,type='l')
+
+#################################################33
+#############33
+#avg EOD per fish per time point to get bin averages per fish
+
+#table with each fish, at each time point and Avg % baseline 
+mean.time <- threeday %>%
+  group_by(TREATGROUP, ID, Time, bin) %>%
+  summarise(
+    PERBaseline = mean(PERBaseline)
+  )
+mean.time <- as.data.frame(mean.time)
+
+#for ctrls at each bin
+#subset to controls only
+ctrl<- subset(mean.time, TREATGROUP == "Control")
+head(ctrl)
+
+#create summary table for means
+summary <- data.frame(bin=factor(),PERBaseline=integer(), TREATGROUP=factor(), n = integer(), sd=integer(), sem=integer())
+
+#get means for %baseline with bins and each fish ID
+mean.data.ctrl <- ctrl %>%
+  group_by(ID, bin) %>%
+  summarise(
+    PERBaseline = mean(PERBaseline)
+  )
+#what bins are there
+unique(mean.data.ctrl$bin)
+#for each bin,
+#subset all individuals at a certain bin 
+sub<-subset(mean.data.ctrl, bin == "12")
+#calculate mean, SD and Standard error for all ctrl fish at that bin
+meanPB <- mean(sub$PERBaseline)
+sd <- sd(sub$PERBaseline)
+n <- as.integer(length(sub$PERBaseline))
+sem <- sd/sqrt(n)
+#put everything in summary
+summary <- rbind(summary, data.frame(bin= 12, PERBaseline=meanPB, TREATGROUP="Control", n=n, sd=sd, sem=sem))
+#repeat above with all bins (see unique- I couldn't get the loop to run correctly so just did manually for sake of time)
+
+
+#Calculate mean and SE for exp at each bin
+#subset to exp only
+exp<- subset(mean.time, TREATGROUP == "Experimental")
+head(exp)  
+
+
+#get means for % baseline with bins and each fish ID
+mean.data.exp <- exp %>%
+  group_by(bin,ID) %>%
+  summarise(
+    PERBaseline = mean(PERBaseline)
+  )
+#what bins are there
+unique(mean.data.exp$bin)
+#for each bin,
+#subset all individuals at a certain bin 
+sub<-subset(mean.data.exp, bin == "12")
+#calculate mean SD and Standard error
+meanPB <- mean(sub$PERBaseline)
+sd <- sd(sub$PERBaseline)
+n <- as.integer(length(sub$PERBaseline))
+sem <- sd/sqrt(n)
+#put everything in summary
+summary <- rbind(summary, data.frame(bin= 12, PERBaseline=meanPB, TREATGROUP="Experimental", n=n, sd=sd, sem=sem))
+#repeat above with all bins- (see unique- I couldn't get the loop to run correctly so just did manually for sake of time)
+
+#save summary
+#write.csv(summary, "C:/Users/Savvas Constantinou/Desktop/summary.csv", row.names = FALSE)
+#reload summary
+#summary <- read.csv("C:/Users/Savvas Constantinou/Desktop/summary.csv", header = TRUE, colClasses = c("factor", "numeric", "factor", "numeric", "numeric", "numeric"))
+#summary$bin <- ordered(summary$bin, levels = c("0.5", "1", "2", "4", "5", "6", "8", "9","10", "12"))
+
+#plot data of avg EOD of exp and ctrls over time
+plot <- ggplot(summary, aes(x=bin, y=PERBaseline, group=TREATGROUP, color = TREATGROUP))+
+  geom_point(position= "jitter", data=summary, size=4, aes(x=bin, y=PERBaseline)) +
+  geom_errorbar(aes(ymin=PERBaseline-summary$sem, ymax=PERBaseline+summary$sem), width=0.5, size=1) +
+  theme_classic2() 
+plot
+
+#plot average EOD per fish over bins
+#controls
+plotctrl <- ggplot(mean.data.ctrl, aes(x=bin, y=PERBaseline, group=ID, color=ID), show.legend = FALSE) +
+  geom_line() +
+  geom_point() +
+  theme_classic2()
+plotctrl + guides (color=FALSE)
+
+#exp
+plotexp <- ggplot(mean.data.exp, aes(x=bin, y=PERBaseline, group=ID, color=ID)) +
+  geom_line() +
+  geom_point() +
+  theme_classic2()
+plotexp + guides (color=FALSE)
+
+#do repeated measures ANOVA 2 way for time and treatment
+
+#find avg baseline at each bin for ctrl/exp and each fish
+mean.data <- threeday %>%
+  group_by(TREATGROUP, ID, bin) %>%
+  summarise(
+    PERBaseline = mean(PERBaseline)
+  )
+#convert tibble to dataframe
+mean.data<- as.data.frame(mean.data)
+mean.data <-droplevels(mean.data)
+head(mean.data)
+
+#Repeated measures (include ID error as random effect) two way (time and treatment) anova
+
+repanova <- aov(PERBaseline~TREATGROUP + bin + Error(ID), data=mean.data)
+#is treatment sig?
+summary(repanova)
+
+#Do controls differ over time? RM one way analysis with just ctrls. 
+#Would expect ctrl mean to not differ over time if ctrls working as expected
+#subset to just controls
+onewayRMctrl <- subset(mean.data, TREATGROUP == "Control")
+
+#one way RM anova
+ctrlanova <- aov(PERBaseline~bin + Error(ID), data=onewayRMctrl)
+#is bin sig (within effect)?
+summary(ctrlanova)
