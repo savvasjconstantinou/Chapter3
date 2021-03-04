@@ -113,12 +113,21 @@ plotctrl <- ggplot(mean.data.ctrl, aes(x=bin, y=PERBaseline, group=ID, color=ID)
   theme_classic2()
 plotctrl + guides (color=FALSE)
 
+#determine number of fish in ctrl group
+mean.data.ctrl <- droplevels(mean.data.ctrl)
+unique(mean.data.ctrl$ID)
+
+
 #exp
 plotexp <- ggplot(mean.data.exp, aes(x=bin, y=PERBaseline, group=ID, color=ID)) +
   geom_line() +
   geom_point() +
   theme_classic2()
 plotexp + guides (color=FALSE)
+
+#determine number of fish in ctrl group
+mean.data.exp <- droplevels(mean.data.exp)
+unique(mean.data.exp$ID)
 
 #do repeated measures ANOVA 2 way for time and treatment
 
