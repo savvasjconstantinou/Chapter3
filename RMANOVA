@@ -2,6 +2,7 @@
 library(ggpubr)
 library(dplyr)
 library(Hmisc)
+library(gridExtra)
 
 #code to bring in file and check
 threeday <- read.csv("C:/Users/Savvas Constantinou/Desktop/threeday.csv", header = TRUE, colClasses = c("factor", "numeric", "factor", "numeric", "factor", "factor", "factor", "factor", "factor", "factor", "factor", "factor"))
@@ -105,25 +106,33 @@ plot <- ggplot(summary, aes(x=bin, y=PERBaseline, group=TREATGROUP, color = TREA
   theme_classic2() 
 plot
 
+#code to figure out color codes from graph
+#ggplot_build(plot)$data
+#[[1]]
+
+
 #plot average EOD per fish over bins
 #controls
-plotctrl <- ggplot(mean.data.ctrl, aes(x=bin, y=PERBaseline, group=ID, color=ID), show.legend = FALSE) +
-  geom_line() +
-  geom_point() +
-  theme_classic2()
-plotctrl + guides (color=FALSE)
+plotctrl <- ggplot(mean.data.ctrl, aes(x=bin, y=PERBaseline, group=ID), show.legend = FALSE) +
+  geom_line(color="#F8766D") +
+  geom_point(color="#F8766D") +
+  theme_classic2() +
+  guides (color=FALSE) +
+  labs(x = "Hours", y= " ")
+
+#exp
+plotexp <- ggplot(mean.data.exp, aes(x=bin, y=PERBaseline, group=ID)) +
+  geom_line(colour="#00BFC4") +
+  geom_point(colour="#00BFC4") +
+  theme_classic2() + 
+  guides (color=FALSE) +
+  labs(x = "Hours", y= " ")
+
+grid.arrange(plotctrl, plotexp, nrow=2)
 
 #determine number of fish in ctrl group
 mean.data.ctrl <- droplevels(mean.data.ctrl)
 unique(mean.data.ctrl$ID)
-
-
-#exp
-plotexp <- ggplot(mean.data.exp, aes(x=bin, y=PERBaseline, group=ID, color=ID)) +
-  geom_line() +
-  geom_point() +
-  theme_classic2()
-plotexp + guides (color=FALSE)
 
 #determine number of fish in ctrl group
 mean.data.exp <- droplevels(mean.data.exp)
