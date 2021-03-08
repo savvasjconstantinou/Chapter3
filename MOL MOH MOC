@@ -1,6 +1,26 @@
+#chi square used to determine differences in behavor following MO injection and deaths
+
+toxic <- c(17, 4, 2, 4, 0, 0)
+ho <- chisq.test(toxic)
+ho$expected
+
+death <- c(4, 4, 1, 0, 0, 0)
+hi <- chisq.test(death)
+hi$expected
+#___________________________________
+#code for anova for delta ct differences for qPCR
+dCt <- c(1.42496497, 0.85455584, 1.58148445, 3.46491474, 2.97499999, 3.77181974, 4.77462939, 5.15833434, 6.13886573)
+individual <- as.factor(c("control", "control", "control", "MOL", "MOL", "MOL", "MOH", "MOH", "MOH"))
+new <- data.frame(dCt, individual)
+
+testing <- aov(dCt ~ individual, data = new)
+summary(testing)
+TukeyHSD(testing)
+
+#__________________________________
+#https://www.scribbr.com/statistics/anova-in-r/ - code to see if there are differences in MOL, MOH and MOC2 amp
 #bring data in
 library(ggpubr)
-library(AICcmodavg)
 library(dplyr)
 amp.data <- read.csv("C:/Users/Savvas Constantinou/Desktop/amp.data.csv", header = TRUE, colClasses = c("factor", "numeric", "factor", "numeric", "factor", "factor", "factor", "factor", "factor", "factor"))
 head(amp.data)
@@ -13,25 +33,18 @@ MO$Time <- droplevels(MO$Time)
 #raw data boxplot
 ggboxplot(MO, x = "Time", y = "PERBaseline", add = "point", color="ID")
 
-#model selection
-one.way <- aov(PERBaseline ~ Time, data= MO)
-two.way <- aov(PERBaseline ~ Time + ID, data= MO)
-interaction <- aov(PERBaseline ~ Time*ID, data= MO)
-
-
-model.set <- list(one.way, two.way, interaction)
-model.names <- c("one.way", "two.way", "interaction")
-
-aictab(model.set, modnames = model.names)
-
-summary(interaction)
+#model selection- is interaction sig?
+one.way <- aov(PERBaseline ~ Time + Error(ID), data= MO)
+summary(one.way)
+two.way <- aov(PERBaseline ~ Time + ID + Error(ID), data= MO)
+summary(two.way)
+interaction <- aov(PERBaseline ~ Time*ID + Error(ID), data= MO)
 
 #post hoc tests
+#Remove Error term for post hoc tests
+interaction <- aov(PERBaseline ~ Time*ID, data= MO)
 tukey <- TukeyHSD(interaction)
 tukey
-
-
-plot(tukey)
 
 
 tukey.plot.aov<-aov(PERBaseline ~ Time:ID, data=MO)
@@ -79,3 +92,4 @@ two.way.plot
 #determine number of observations in each group
 label_df <- MO %>% count(ID, Time)
 label_df
+
