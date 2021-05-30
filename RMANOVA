@@ -26,8 +26,8 @@ ggboxplot(threeday, x = "bin", y = "PERBaseline", color = "TREATGROUP")
 xyplot(PERBaseline~bin,data = threeday, groups=ID ,type='l')
 xyplot(PERBaseline~bin,data = threeday, groups=TREATGROUP ,type='l')
 
-#################################################33
-#############33
+###################################################
+###############
 #avg EOD per fish per time point to get bin averages per fish
 
 #table with each fish, at each time point and Avg % baseline 
